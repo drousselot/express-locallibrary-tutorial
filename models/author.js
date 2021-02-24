@@ -23,7 +23,7 @@ AuthorSchema
 AuthorSchema
 .virtual('lifespan')
 .get(function () {
-  return (this.date_of_death.getYear() - this.date_of_birth.getYear()).toString();
+  return (this.date_of_death.getYear() - this.date_of_birth.getYear()).toString(); //marche pas même avec getFullYear ... 
 });
 
 // Virtual for author's URL
