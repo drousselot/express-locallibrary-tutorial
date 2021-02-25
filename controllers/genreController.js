@@ -26,7 +26,7 @@ exports.genre_detail = function(req, res, next) {
         },
 
         genre_books: function(callback) {
-            Book.find({ 'genre': req.params.id })
+            Book.find({ 'genre': req.params.id },'title summary')
               .exec(callback);
         },
 
@@ -98,12 +98,51 @@ exports.genre_create_post =  [
 
 // Display Genre delete form on GET.
 exports.genre_delete_get = function(req, res) {
-    res.send('NOT IMPLEMENTED: Genre delete GET');
+    
+  async.parallel({
+    genre: function(callback) {
+        Genre.findById(req.params.id)
+          .exec(callback);
+    },
+    genre_books: function(callback) {
+        Book.find({ 'genre': req.params.id },'title summary')
+          .exec(callback);
+    },
+}, function(err, results) {
+    if (err) { return next(err); }
+    if (results.genre==null) { // No results.
+        res.redirect('/catalog/genres');
+    }
+    // Successful, so render
+    res.render('genre_delete', { title: 'Supprimer le Genre', genre: results.genre, genre_books: results.genre_books } );
+});
+
 };
 
 // Handle Genre delete on POST.
 exports.genre_delete_post = function(req, res) {
-    res.send('NOT IMPLEMENTED: Genre delete POST');
+  async.parallel({
+    genre: function(callback) {
+        Genre.findById(req.body.genreid)
+          .exec(callback);
+    },
+    genre_books: function(callback) {
+        Book.find({ 'genre': req.body.genreid })
+          .exec(callback);
+    },
+}, function(err, results) {
+    if (err) { return next(err); }
+    if (results.genre_books.length > 0) {
+      res.render('genre_delete', { title: 'Supprimer le Genre', genre: results.genre, genre_books: results.genre_books } );
+      return;
+    }
+    else {
+      Genre.findByIdAndRemove(req.body.genreid, function deleteGenre(err){
+        if (err) { return next(err); }
+        res.redirect('/catalog/genres')
+      })
+    }
+  });
 };
 
 // Display Genre update form on GET.
