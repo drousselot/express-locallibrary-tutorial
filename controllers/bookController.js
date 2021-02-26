@@ -163,12 +163,56 @@ exports.book_create_post = [
 
 // Display book delete form on GET.
 exports.book_delete_get = function(req, res) {
-    res.send('NOT IMPLEMENTED: Book delete GET');
+    
+    async.parallel({
+        book: function(callback) {
+            Book.findById(req.params.id)
+            .populate('author')
+            .populate('genre')
+            .exec(callback);
+        },
+        book_instance: function(callback) {
+            BookInstance.find({ 'book': req.params.id })
+            .exec(callback);
+        },
+    }, function (err, results) {
+        if (err) { return next(err); }
+        if (results.book==null){
+            res.redirect('/catalog/books');
+        }
+        res.render('book_delete', { title: 'Supprimer le livre', book: results.book, book_instances: results.book_instance } );
+    });
+
 };
 
 // Handle book delete on POST.
 exports.book_delete_post = function(req, res) {
-    res.send('NOT IMPLEMENTED: Book delete POST');
+    
+    async.parallel({
+        book: function(callback) {
+            Book.findById(req.body.bookid)
+            .populate('author')
+            .populate('genre')
+            .exec(callback);
+        },
+        book_instance: function(callback) {
+            BookInstance.find({ 'book': req.body.bookid })
+            .exec(callback);
+        },
+    }, function(err, results) {
+        if (err) { return next(err); }
+        if (results.book_instance.length > 0) {
+            res.render('book_delete', { title: 'Supprimer le livre', book: results.book, book_instances: results.book_instance } );
+            return;
+        }
+        else {
+            Book.findByIdAndRemove(req.body.bookid, function deleteBook(err){
+                if (err) { return next(err); }
+                res.redirect('/catalog/books')
+            })
+        }
+    });
+
 };
 
 // Display book update form on GET.
